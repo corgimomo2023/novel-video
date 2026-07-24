@@ -1,0 +1,10 @@
+FROM python:3.11.15-slim-bookworm@sha256:b18992999dbe963a45a8a4da40ac2b1975be1a776d939d098c647482bcad5cba
+
+LABEL org.opencontainers.image.source="https://github.com/corgimomo2023/novel-video"
+LABEL org.opencontainers.image.description="Checksummed RunPod network-volume model populator"
+
+WORKDIR /app
+COPY models.json populate_volume.py ./
+
+ENTRYPOINT ["python", "/app/populate_volume.py"]
+CMD ["--root", "/runpod-volume"]
