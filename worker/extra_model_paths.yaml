@@ -1,0 +1,7 @@
+novel_video_network_volume:
+  base_path: /runpod-volume
+  diffusion_models: models/diffusion_models/
+  text_encoders: models/text_encoders/
+  audio_encoders: models/audio_encoders/
+  loras: models/loras/
+  vae: models/vae/

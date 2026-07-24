@@ -7,6 +7,7 @@ LABEL org.opencontainers.image.title="novel-video-wan-s2v-worker" \
 COPY workflows/ /opt/novel-video/workflows/
 COPY models.json /opt/novel-video/models.json
 COPY populate_volume.py /opt/novel-video/populate_volume.py
+COPY extra_model_paths.yaml /comfyui/extra_model_paths.yaml
 COPY start-with-volume-log.sh /opt/novel-video/start-with-volume-log.sh
 RUN chmod 755 /opt/novel-video/start-with-volume-log.sh
 

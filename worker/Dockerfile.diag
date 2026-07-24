@@ -1,0 +1,5 @@
+FROM python:3.11-slim-bookworm
+RUN pip install --no-cache-dir runpod==1.8.1
+WORKDIR /app
+COPY volume_diag.py ./
+CMD ["python", "-u", "/app/volume_diag.py"]
