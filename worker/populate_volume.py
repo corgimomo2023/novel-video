@@ -47,10 +47,9 @@ def download(model: dict, root: Path, *, dry_run: bool = False) -> str:
     if current_size == expected_size:
         actual = sha256_file(partial)
         if actual != expected_hash:
-            partial.unlink()
             raise RuntimeError(
                 f"sha256 mismatch for {model['filename']}: expected {expected_hash}, got {actual}; "
-                "removed invalid partial file"
+                "retained partial file for investigation or manifest correction"
             )
         partial.replace(destination)
         return f"VERIFIED {destination}"

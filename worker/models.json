@@ -7,35 +7,35 @@
       "filename": "wan2.2_s2v_14B_fp8_scaled.safetensors",
       "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_s2v_14B_fp8_scaled.safetensors",
       "bytes": 16394832474,
-      "sha256": "04dcda74f0528ef99e7053a9bc8ef3f6485a2905bb5449e5813df1864d7063a2"
+      "sha256": "140e75af5534ac3d91e710d9df756f7032addd64b341ba2c1c70e3e6da9aa216"
     },
     {
       "folder": "text_encoders",
       "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
       "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
       "bytes": 6735906897,
-      "sha256": "b94ab462ac11c85e60e2e9bd4045d8eaad6f38186936cb6f8909ca43f6bdd348"
+      "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68"
     },
     {
       "folder": "audio_encoders",
       "filename": "wav2vec2_large_english_fp16.safetensors",
       "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/audio_encoders/wav2vec2_large_english_fp16.safetensors",
       "bytes": 630997322,
-      "sha256": "9e0d1772edba5b94a9896f248b3431dbc35482de2277431c3bd5e3a52b56d418"
+      "sha256": "f0017a43ea57ef6b3d4866be607844bbd8cada6d30966f7d70044ed0d63d3f9e"
     },
     {
       "folder": "vae",
       "filename": "wan_2.1_vae.safetensors",
       "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors",
       "bytes": 253815318,
-      "sha256": "2e358d90f91ce658dc1be053d44cf2d6437e5f517c71ae89fcb2c89fd54ca67e"
+      "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b"
     },
     {
       "folder": "loras",
       "filename": "wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors",
       "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors",
       "bytes": 1226977424,
-      "sha256": "899e3479db9f13951436e8bf624c968b7a57260caf7fa64555c524585c64485b"
+      "sha256": "698321cb86bd30c4af06c9b84e656a1048c8cb54e06d50694536fb5de37fde41"
     }
   ]
 }
