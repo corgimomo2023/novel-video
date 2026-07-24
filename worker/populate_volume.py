@@ -113,7 +113,32 @@ def main() -> int:
         except Exception as error:
             failures += 1
             print(f"FAIL {model['filename']}: {error}", file=sys.stderr)
-    return 1 if failures else 0
+
+    if failures or args.dry_run:
+        return 1 if failures else 0
+
+    marker = args.root / ".novel-video-models-ready.json"
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker_tmp = marker.with_suffix(".tmp")
+    marker_tmp.write_text(
+        json.dumps(
+            {
+                "models": [
+                    {
+                        key: model[key]
+                        for key in ("folder", "filename", "bytes", "sha256")
+                    }
+                    for model in models
+                ],
+                "total_bytes": required,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    os.replace(marker_tmp, marker)
+    print(f"READY {marker}")
+    return 0
 
 
 if __name__ == "__main__":
