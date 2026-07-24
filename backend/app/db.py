@@ -49,7 +49,8 @@ class Database:
                 sequence INTEGER NOT NULL, title TEXT NOT NULL, prompt TEXT NOT NULL DEFAULT '',
                 dialogue TEXT NOT NULL DEFAULT '', duration_seconds REAL NOT NULL DEFAULT 3,
                 engine TEXT NOT NULL DEFAULT 'wan_s2v', status TEXT NOT NULL DEFAULT 'draft',
-                output_url TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+                output_url TEXT, reference_url TEXT, audio_url TEXT,
+                created_at TEXT NOT NULL, updated_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS jobs (
                 id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -64,6 +65,23 @@ class Database:
                 started_at TEXT, stopped_at TEXT, estimated_cost_usd REAL NOT NULL DEFAULT 0
             );
             ''')
+            job_columns = {row["name"] for row in db.execute("PRAGMA table_info(jobs)").fetchall()}
+            migrations = {
+                "remote_job_id": "ALTER TABLE jobs ADD COLUMN remote_job_id TEXT",
+                "remote_status": "ALTER TABLE jobs ADD COLUMN remote_status TEXT",
+                "remote_updated_at": "ALTER TABLE jobs ADD COLUMN remote_updated_at TEXT",
+            }
+            for column, statement in migrations.items():
+                if column not in job_columns:
+                    db.execute(statement)
+            shot_columns = {row["name"] for row in db.execute("PRAGMA table_info(shots)").fetchall()}
+            shot_migrations = {
+                "reference_url": "ALTER TABLE shots ADD COLUMN reference_url TEXT",
+                "audio_url": "ALTER TABLE shots ADD COLUMN audio_url TEXT",
+            }
+            for column, statement in shot_migrations.items():
+                if column not in shot_columns:
+                    db.execute(statement)
 
     def rows(self, query: str, params=()):
         with self.connect() as db:
@@ -115,13 +133,14 @@ class Database:
         item_id, stamp = str(uuid.uuid4()), now()
         seq = self.row("SELECT COALESCE(MAX(sequence),0)+1 AS n FROM shots WHERE project_id=?", (project_id,))["n"]
         self.execute('''INSERT INTO shots
-            (id,project_id,sequence,title,prompt,dialogue,duration_seconds,engine,status,created_at,updated_at)
-            VALUES (?,?,?,?,?,?,?,?, 'draft',?,?)''',
-            (item_id, project_id, seq, data["title"], data["prompt"], data["dialogue"], data["duration_seconds"], data["engine"], stamp, stamp))
+            (id,project_id,sequence,title,prompt,dialogue,duration_seconds,engine,status,reference_url,audio_url,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?, 'draft',?,?,?,?)''',
+            (item_id, project_id, seq, data["title"], data["prompt"], data["dialogue"], data["duration_seconds"], data["engine"],
+             data.get("reference_url"), data.get("audio_url"), stamp, stamp))
         return self.row("SELECT * FROM shots WHERE id=?", (item_id,))
 
     def update_shot(self, shot_id: str, changes: dict):
-        allowed = {k: v for k, v in changes.items() if v is not None and k in {"title","prompt","dialogue","duration_seconds","engine"}}
+        allowed = {k: v for k, v in changes.items() if v is not None and k in {"title","prompt","dialogue","duration_seconds","engine","reference_url","audio_url"}}
         if allowed:
             allowed["updated_at"] = now()
             clause = ", ".join(f"{key}=?" for key in allowed)
@@ -146,9 +165,15 @@ class Database:
             FROM jobs j JOIN shots s ON s.id=j.shot_id JOIN projects p ON p.id=j.project_id
             ORDER BY j.created_at DESC LIMIT 200''')
 
-    def claim_job(self):
+    def claim_job(self, provider: str | None = None):
         with self._lock, self.connect() as db:
-            job = db.execute("SELECT * FROM jobs WHERE status='queued' ORDER BY created_at LIMIT 1").fetchone()
+            if provider:
+                job = db.execute(
+                    "SELECT * FROM jobs WHERE status='queued' AND provider=? ORDER BY created_at LIMIT 1",
+                    (provider,),
+                ).fetchone()
+            else:
+                job = db.execute("SELECT * FROM jobs WHERE status='queued' ORDER BY created_at LIMIT 1").fetchone()
             if not job:
                 return None
             updated = db.execute("UPDATE jobs SET status='running', progress=5, started_at=? WHERE id=? AND status='queued'", (now(), job["id"]))

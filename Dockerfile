@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl fon
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
+COPY worker/workflows/wan2.2-s2v-api.json ./workflows/wan2.2-s2v-api.json
 COPY --from=frontend-build /build/dist ./frontend
 RUN mkdir -p /app/data/media
 EXPOSE 8094

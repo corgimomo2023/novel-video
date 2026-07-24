@@ -48,13 +48,30 @@ def test_login_and_project_lifecycle():
                 "dialogue": "你終於返嚟。",
                 "duration_seconds": 3.0,
                 "engine": "wan_s2v",
+                "reference_url": "/api/media/uploads/reference.jpg",
+                "audio_url": "/api/media/uploads/dialogue.mp3",
             },
         )
         assert shot.status_code == 201
+        assert shot.json()["reference_url"] == "/api/media/uploads/reference.jpg"
+        assert shot.json()["audio_url"] == "/api/media/uploads/dialogue.mp3"
 
         queued = client.post(f"/api/shots/{shot.json()['id']}/queue")
         assert queued.status_code == 202
         assert queued.json()["status"] == "queued"
+
+
+def test_shot_rejects_external_or_traversal_asset_urls():
+    with TestClient(create_app(testing=True)) as client:
+        login(client)
+        project = client.post("/api/projects", json={"title": "Asset safety"}).json()
+        payload = {
+            "title": "Unsafe",
+            "reference_url": "../../etc/passwd",
+            "audio_url": "https://evil.example/audio.mp3",
+        }
+        response = client.post(f"/api/projects/{project['id']}/shots", json=payload)
+        assert response.status_code == 422
 
 
 def test_runpod_is_not_faked_when_unconfigured():

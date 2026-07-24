@@ -13,8 +13,10 @@ from fastapi.staticfiles import StaticFiles
 
 from .auth import authenticate, clear_session, require_user, set_session
 from .db import Database
+from .providers.runpod import RunPodClient
 from .schemas import CharacterCreate, LoginRequest, ProjectCreate, ProjectUpdate, ShotCreate, ShotUpdate
-from .worker import MockWorker
+from .worker import MockWorker, RunPodWorker
+from .workflow import WanS2VWorkflowFactory
 
 
 def create_app(testing: bool = False) -> FastAPI:
@@ -24,16 +26,31 @@ def create_app(testing: bool = False) -> FastAPI:
     media_dir = data_dir / "media"
     media_dir.mkdir(parents=True, exist_ok=True)
     db = Database(data_dir / "video.db")
-    worker = MockWorker(db, media_dir)
+    provider = os.environ.get("GPU_PROVIDER", "mock")
+    worker = None
+    if provider == "mock":
+        worker = MockWorker(db, media_dir)
+    elif provider == "runpod":
+        api_key = os.environ.get("RUNPOD_API_KEY", "")
+        endpoint_id = os.environ.get("RUNPOD_ENDPOINT_ID", "")
+        workflow_path = Path(os.environ.get("WAN_S2V_WORKFLOW", "/app/workflows/wan2.2-s2v-api.json"))
+        if api_key and endpoint_id and workflow_path.is_file():
+            worker = RunPodWorker(
+                db,
+                media_dir,
+                RunPodClient(api_key, endpoint_id),
+                WanS2VWorkflowFactory(workflow_path, media_dir),
+            )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
-        if os.environ.get("GPU_PROVIDER", "mock") == "mock":
+        if worker:
             worker.start()
         if not testing and not db.list_projects():
             seed_demo(db)
         yield
-        worker.stop()
+        if worker:
+            worker.stop()
         if testing:
             shutil.rmtree(data_dir, ignore_errors=True)
 
@@ -43,7 +60,7 @@ def create_app(testing: bool = False) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "service": "novel-video", "provider": os.environ.get("GPU_PROVIDER", "mock")}
+        return {"status": "ok", "service": "novel-video", "provider": provider, "configured": worker is not None}
 
     @app.post("/api/auth/login")
     def login(payload: LoginRequest):
@@ -106,17 +123,21 @@ def create_app(testing: bool = False) -> FastAPI:
 
     @app.post("/api/shots/{shot_id}/queue", status_code=202)
     def queue_shot(shot_id: str, _: str = Depends(require_user)):
-        job = db.queue_shot(shot_id, os.environ.get("GPU_PROVIDER", "mock"))
+        if not worker:
+            raise HTTPException(503, "GPU provider is not fully configured")
+        job = db.queue_shot(shot_id, provider)
         if not job:
             raise HTTPException(404, "Shot not found")
         return job
 
     @app.post("/api/projects/{project_id}/queue", status_code=202)
     def queue_project(project_id: str, _: str = Depends(require_user)):
+        if not worker:
+            raise HTTPException(503, "GPU provider is not fully configured")
         project = db.get_project(project_id)
         if not project:
             raise HTTPException(404, "Project not found")
-        jobs = [db.queue_shot(shot["id"], os.environ.get("GPU_PROVIDER", "mock"))
+        jobs = [db.queue_shot(shot["id"], provider)
                 for shot in project["shots"] if shot["status"] not in {"queued", "running"}]
         return {"queued": len([job for job in jobs if job]), "jobs": jobs}
 
@@ -138,8 +159,7 @@ def create_app(testing: bool = False) -> FastAPI:
 
     @app.get("/api/gpu/status")
     def gpu_status(_: str = Depends(require_user)):
-        provider = os.environ.get("GPU_PROVIDER", "mock")
-        configured = provider == "mock" or bool(os.environ.get("RUNPOD_API_KEY"))
+        configured = worker is not None
         return {
             "provider": provider,
             "configured": configured,

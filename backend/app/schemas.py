@@ -28,6 +28,8 @@ class ShotCreate(BaseModel):
     dialogue: str = Field(default="", max_length=4000)
     duration_seconds: float = Field(default=3.0, ge=1.0, le=20.0)
     engine: str = Field(default="wan_s2v", pattern="^(wan_s2v|echo_mimic|musetalk|camera_motion)$")
+    reference_url: str | None = Field(default=None, pattern=r"^/api/media/uploads/[A-Za-z0-9._-]+$")
+    audio_url: str | None = Field(default=None, pattern=r"^/api/media/uploads/[A-Za-z0-9._-]+$")
 
 
 class ShotUpdate(BaseModel):
@@ -36,3 +38,5 @@ class ShotUpdate(BaseModel):
     dialogue: str | None = Field(default=None, max_length=4000)
     duration_seconds: float | None = Field(default=None, ge=1.0, le=20.0)
     engine: str | None = Field(default=None, pattern="^(wan_s2v|echo_mimic|musetalk|camera_motion)$")
+    reference_url: str | None = Field(default=None, pattern=r"^/api/media/uploads/[A-Za-z0-9._-]+$")
+    audio_url: str | None = Field(default=None, pattern=r"^/api/media/uploads/[A-Za-z0-9._-]+$")
