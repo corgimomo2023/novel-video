@@ -1,0 +1,20 @@
+services:
+  novel-video:
+    build: .
+    container_name: novel-video
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8094:8094"
+    volumes:
+      - ./data:/app/data
+    mem_limit: 1g
+    cpus: 1.5
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8094/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
