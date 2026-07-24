@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.source="https://github.com/corgimomo2023/novel-vi
 LABEL org.opencontainers.image.description="Checksummed RunPod network-volume model populator"
 
 WORKDIR /app
-COPY models.json populate_volume.py ./
+COPY models.json populate_volume.py populate_volume_service.py ./
 
-ENTRYPOINT ["python", "/app/populate_volume.py"]
-CMD ["--root", "/runpod-volume"]
+EXPOSE 8000
+ENTRYPOINT ["python", "/app/populate_volume_service.py"]
