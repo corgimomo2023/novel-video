@@ -21,4 +21,12 @@ python populate_volume.py --root /tmp/novel-video-volume --dry-run
 docker build --platform linux/amd64 -t novel-video-wan-s2v:local .
 ```
 
-Models remain on a RunPod Network Volume; they are not baked into the image.
+## Populate a Network Volume
+
+Run the downloader from a temporary Pod with the volume mounted at `/runpod-volume`:
+
+```bash
+python /opt/novel-video/populate_volume.py --root /runpod-volume
+```
+
+It resumes partial downloads and validates exact byte counts and SHA-256 before atomic rename. Models remain on the Network Volume; they are not baked into the image.

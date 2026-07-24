@@ -6,6 +6,7 @@ LABEL org.opencontainers.image.title="novel-video-wan-s2v-worker" \
 
 COPY workflows/ /opt/novel-video/workflows/
 COPY models.json /opt/novel-video/models.json
+COPY populate_volume.py /opt/novel-video/populate_volume.py
 
 ENV COMFY_LOG_LEVEL=INFO \
     NETWORK_VOLUME_DEBUG=false \
