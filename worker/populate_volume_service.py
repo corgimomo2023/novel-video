@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,6 +15,15 @@ APP_ROOT = Path(__file__).resolve().parent
 MODEL_ROOT = Path(os.environ.get("MODEL_ROOT", "/runpod-volume"))
 MANIFEST = json.loads((APP_ROOT / "models.json").read_text(encoding="utf-8"))
 PROCESS: subprocess.Popen[str] | None = None
+
+
+def startup_log_tail() -> str:
+    path = MODEL_ROOT / "logs" / "worker-startup.log"
+    if not path.is_file():
+        return ""
+    text = path.read_text(encoding="utf-8", errors="replace")[-20_000:]
+    text = re.sub(r"(?i)(bearer|token|secret|api[_-]?key)([=: ]+)[^\s]+", r"\1\2[REDACTED]", text)
+    return "\n".join(text.splitlines()[-120:])
 
 
 def status() -> dict[str, object]:
@@ -41,6 +51,7 @@ def status() -> dict[str, object]:
         "downloaded_bytes": downloaded,
         "expected_bytes": expected,
         "files": files,
+        "startup_log_tail": startup_log_tail(),
     }
 
 
