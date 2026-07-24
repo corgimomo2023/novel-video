@@ -39,14 +39,25 @@ def download(model: dict, root: Path, *, dry_run: bool = False) -> str:
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     partial = destination.with_suffix(destination.suffix + ".part")
-    offset = partial.stat().st_size if partial.exists() else 0
-    if offset > expected_size:
+    current_size = partial.stat().st_size if partial.exists() else 0
+    if current_size > expected_size:
         partial.unlink()
-        offset = 0
+        current_size = 0
+
+    if current_size == expected_size:
+        actual = sha256_file(partial)
+        if actual != expected_hash:
+            partial.unlink()
+            raise RuntimeError(
+                f"sha256 mismatch for {model['filename']}: expected {expected_hash}, got {actual}; "
+                "removed invalid partial file"
+            )
+        partial.replace(destination)
+        return f"VERIFIED {destination}"
 
     headers = {"User-Agent": "novel-video-volume-populator/1.0"}
-    if offset:
-        headers["Range"] = f"bytes={offset}-"
+    if current_size:
+        headers["Range"] = f"bytes={current_size}-"
     request = urllib.request.Request(model["url"], headers=headers)
 
     try:
@@ -54,13 +65,13 @@ def download(model: dict, root: Path, *, dry_run: bool = False) -> str:
     except urllib.error.HTTPError as error:
         raise RuntimeError(f"download failed for {model['filename']}: HTTP {error.code}") from None
 
-    if offset and getattr(response, "status", 200) != 206:
+    if current_size and getattr(response, "status", 200) != 206:
         response.close()
         partial.unlink(missing_ok=True)
         return download(model, root, dry_run=False)
 
-    mode = "ab" if offset else "wb"
-    completed = offset
+    mode = "ab" if current_size else "wb"
+    completed = current_size
     with response, partial.open(mode) as output:
         while chunk := response.read(CHUNK_SIZE):
             output.write(chunk)
